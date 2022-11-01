@@ -1,13 +1,18 @@
-import numpy as np
-import pandas as pd
-from pyCRM import CRM
+"""Senlac functions."""
+from __future__ import annotations
+
 import os
 
-# NUM_CORES = (os.cpu_count() // 2) or 1
+import numpy as np
+import pandas as pd
+from pywaterflood import CRM
+
+NUM_CORES = (os.cpu_count() // 2) or 1
 idx = pd.IndexSlice
 
 
 def init_fit_extract_gains_mc(prod, inj, gains, rng=None, num_threads=1):
+    """Fit CRM using gain guesses with some randomization."""
     if rng is None:
         rng = np.random.default_rng()
     gains_guess = gains + rng.uniform(-0.1, 0.1, gains.shape)
@@ -20,7 +25,7 @@ def init_fit_extract_gains_mc(prod, inj, gains, rng=None, num_threads=1):
 
 def fit_random_instance(production_table: pd.DataFrame, injection_table: pd.DataFrame):
     """
-    fit CRM using random inputs
+    Fit CRM using random inputs.
 
     Parameters
     --------
@@ -51,7 +56,7 @@ def fit_given_guess(
     num_threads: int = 1,
 ) -> CRM:
     """
-    fit CRM using a particular gain guess
+    Fit CRM using a particular gain guess.
 
     Parameters
     --------
@@ -83,6 +88,7 @@ def fit_given_guess(
 
 
 def extract_relative_error(crm: CRM, producers: pd.Index):
+    """Get CRM production errors."""
     residuals = pd.DataFrame(crm.residual(), columns=producers)
     relative_error = (
         residuals.sum() / pd.DataFrame(crm.production, columns=producers).sum()
@@ -91,13 +97,15 @@ def extract_relative_error(crm: CRM, producers: pd.Index):
 
 
 def extract_residuals(crm: CRM, producers: pd.Index):
+    """Get CRM production residuals."""
     residuals = pd.DataFrame(crm.residual(), columns=producers).apply(
-        lambda x: np.mean(x ** 2), axis="index"
+        lambda x: np.mean(x**2), axis="index"
     )
     return residuals
 
 
 def extract_gains(crm: CRM, producers: pd.Index, injectors: pd.Index):
+    """Get gains and taus for well-pairs from CRM model."""
     gains = pd.DataFrame(crm.gains, producers, injectors)
     taus = pd.DataFrame(crm.tau, producers, injectors)
     well_pairs = (
@@ -109,6 +117,7 @@ def extract_gains(crm: CRM, producers: pd.Index, injectors: pd.Index):
 
 
 def extract_primary(crm: CRM, producers: pd.Index):
+    """Get primary production fits from CRM model."""
     primary_fits = pd.DataFrame(
         {"Gain primary": crm.gains_producer, "Tau primary": crm.tau_producer}, producers
     )
@@ -116,6 +125,7 @@ def extract_primary(crm: CRM, producers: pd.Index):
 
 
 def injector_producer_unitarrows(locations, injectors, producers):
+    """Produce dataframe of unit-length arrows between injectors and producers."""
     out = pd.DataFrame(
         index=pd.MultiIndex.from_product([injectors, producers]),
         columns=["angle", "xn", "yn"],
@@ -130,6 +140,7 @@ def injector_producer_unitarrows(locations, injectors, producers):
 
 
 def arrows(gains_spatial, locations, arrow_factor=1):
+    """Produce dataframe of gain-length arrows from injectors to producers."""
     to_join = pd.DataFrame(
         index=gains_spatial.index.drop_duplicates(),
         columns=["angle", "dist", "xn", "yn"],
@@ -151,6 +162,7 @@ def arrows(gains_spatial, locations, arrow_factor=1):
 
 
 def angle(x1, x2, y1, y2):
+    """Angle in radians from (x1,y1) to (x2,y2)."""
     x_diff = x2 - x1
     y_diff = y2 - y1
     return np.arctan2(x_diff, y_diff)

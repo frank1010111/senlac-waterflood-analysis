@@ -1,31 +1,27 @@
+"""Script for running CRM fits on Senlac data."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+from pywaterflood import multiwellproductivity as mpi
 
-# USER LIBRARIES
-import multiwell_productivity_index as mpi
-from utilities import fit_given_guess, extract_gains
+from senlac import init_fit_extract_gains_mc
 
-DATA_DIR = "./data/"
-OUT_DIR = "./results/"
-
-
-def init_fit_extract_gains_mc(prod, inj, gains, rng=None, num_threads=1):
-    if rng is None:
-        rng = np.random.default_rng()
-    gains_guess = gains + rng.uniform(-0.1, 0.1, gains.shape)
-    gains_guess[gains_guess < 1e-4] = 1e-4
-    gains_guess[gains_guess > 1] = 1
-    crm_mc = fit_given_guess(prod, inj, gains_guess, num_threads)
-    gains_mc = extract_gains(crm_mc, prod.columns, inj.columns)
-    return gains_mc
+ROOT_DIR = Path(__file__).parent.parent.parent
+DATA_DIR = ROOT_DIR / "data/"
+OUT_DIR = ROOT_DIR / "results/"
 
 
-if __name__ == "__main__":
-    import argparse
-
+def main():
+    """Run Senlac CRM matches from MPI first guesses."""
     parser = argparse.ArgumentParser(description="Run Senlac CRM instances")
     parser.add_argument(
-        "output_file", help="Location for output csv file",
+        "output_file",
+        help="Location for output csv file",
     )
     parser.add_argument("-n", help="Number of instances to run", default=10, type=int)
     parser.add_argument(
@@ -33,13 +29,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    inj = pd.read_csv(DATA_DIR + "injection_Senlac.csv")
-    prod = pd.read_csv(DATA_DIR + "production_Senlac.csv")
+    inj = pd.read_csv(DATA_DIR / "injection_Senlac.csv")
+    prod = pd.read_csv(DATA_DIR / "production_Senlac.csv")
     prod.index = pd.date_range("1999-01-31", "2009-12-31", freq="M")
-
-    idx = pd.IndexSlice
     locations = pd.read_csv(
-        DATA_DIR + "well_locations_Senlac.csv",
+        DATA_DIR / "well_locations_Senlac.csv",
         skiprows=2,
         names=["Well", "X", "Y"],
         index_col=0,
@@ -62,4 +56,7 @@ if __name__ == "__main__":
         ]
     )
     gains_mc.to_csv(args.output_file)
-    # gains_mc.to_parquet(OUT_DIR + "monte_carlo_gains.parquet")
+
+
+if __name__ == "__main__":
+    main()
