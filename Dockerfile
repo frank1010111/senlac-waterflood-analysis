@@ -1,20 +1,8 @@
-FROM debian:bullseye-slim
+FROM python:3.11-slim
 
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y gcc wget procps net-tools git &&\
-    apt-get autoclean -y && apt-get clean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
-
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh -O ./miniconda.sh && \
-    /bin/bash miniconda.sh -b -p/opt/conda  && \
-    rm miniconda.sh && \
-    /opt/conda/bin/conda clean -ay && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
-
-ENV PATH /opt/conda/bin:$PATH
-COPY ./requirements.yml ./requirements.yml
-RUN conda env update -n base -f requirements.yml
-RUN pip install git+https://github.com/frank1010111/pyCRM
-COPY ./ /Senlac
-ENV PYTHONPATH /Senlac/src:$PYTHONPATH
+RUN mkdir /Senlac
+RUN mkdir /Senlac/results
+COPY data src pyproject.toml /Senlac/
 WORKDIR /Senlac
+RUN pip install .
+CMD [ "run_crm", "/Senlac/results/results.csv"]
