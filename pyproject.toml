@@ -24,6 +24,8 @@ classifiers = [
 readme = "README.md"
 requires-python = ">=3.8,<3.11"
 dependencies = [
+    "arviz>=0.15.1",
+    "bambi>=0.13.0",
     "matplotlib >=3.4.3",
     "numpy >=1.22",
     "openpyxl",
@@ -32,6 +34,7 @@ dependencies = [
     "pywaterflood >=0.1.0",
     "scipy >=1.7.1",
     "seaborn",
+    "statsmodels>=0.14.1",
 ]
 
 [project.optional-dependencies]
